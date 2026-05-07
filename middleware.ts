@@ -1,28 +1,25 @@
-import NextAuth from "next-auth";
-import { authConfig } from "./auth.config";
-import { NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
+import { NextRequest, NextResponse } from "next/server";
 
-const { auth } = NextAuth(authConfig);
-
-export default auth((req) => {
+export async function middleware(req: NextRequest) {
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
   const { pathname } = req.nextUrl;
-  const isLoggedIn = !!req.auth;
+  const isLoggedIn = !!token;
 
   if (pathname.startsWith("/dashboard") && !isLoggedIn) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  if (pathname.startsWith("/dashboard/admin")) {
-    const role = req.auth?.user?.role;
-    if (role !== "ADMIN") {
-      return NextResponse.redirect(new URL("/dashboard", req.url));
-    }
+  if (pathname.startsWith("/dashboard/admin") && token?.role !== "ADMIN") {
+    return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
   if (pathname === "/login" && isLoggedIn) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
-});
+
+  return NextResponse.next();
+}
 
 export const config = {
   matcher: ["/dashboard/:path*", "/login"],
