@@ -1,14 +1,14 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
-import { neon } from "@neondatabase/serverless";
+import { neonConfig } from "@neondatabase/serverless";
 import bcrypt from "bcryptjs";
 import { config } from "dotenv";
 config({ path: ".env.local" });
 
 if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL not found in .env.local");
 
-const sql = neon(process.env.DATABASE_URL);
-const adapter = new PrismaNeon(sql);
+neonConfig.poolQueryViaFetch = true;
+const adapter = new PrismaNeon({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
 const REGISTRY = [
