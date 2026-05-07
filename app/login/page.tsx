@@ -1,12 +1,10 @@
 "use client";
 import { useState } from "react";
-import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Building2, Lock, Mail, Loader2, AlertCircle } from "lucide-react";
+import { loginAction } from "@/app/actions/auth";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -17,13 +15,19 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
-    const res = await signIn("credentials", { email, password, redirect: false });
-
-    if (res?.error) {
-      setError("Invalid email or password");
+    try {
+      const result = await loginAction(email, password);
+      if (result?.error) {
+        setError(result.error);
+        setLoading(false);
+      }
+      // On success, loginAction throws NEXT_REDIRECT which navigates to /dashboard
+    } catch (err: unknown) {
+      // NEXT_REDIRECT is thrown as an error — let it propagate (it's not a real error)
+      const message = err instanceof Error ? err.message : String(err);
+      if (message.includes("NEXT_REDIRECT")) throw err;
+      setError("Something went wrong. Please try again.");
       setLoading(false);
-    } else {
-      router.push("/dashboard");
     }
   }
 
@@ -110,7 +114,7 @@ export default function LoginPage() {
             <div className="grid grid-cols-2 gap-2">
               {[
                 { label: "Admin", email: "admin@nupco.sa", pass: "Admin@2026", color: "text-violet-400" },
-                { label: "User", email: "user@nupco.sa", pass: "User@2026", color: "text-indigo-400" },
+                { label: "User",  email: "user@nupco.sa",  pass: "User@2026",  color: "text-indigo-400" },
               ].map((acc) => (
                 <button
                   key={acc.label}
