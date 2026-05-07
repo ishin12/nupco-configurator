@@ -20,12 +20,17 @@ export default function LoginPage() {
       if (result?.error) {
         setError(result.error);
         setLoading(false);
+      } else {
+        // Success — hard navigate so the session cookie is definitely picked up
+        window.location.href = "/dashboard";
       }
-      // On success, loginAction throws NEXT_REDIRECT which navigates to /dashboard
     } catch (err: unknown) {
-      // NEXT_REDIRECT is thrown as an error — let it propagate (it's not a real error)
-      const message = err instanceof Error ? err.message : String(err);
-      if (message.includes("NEXT_REDIRECT")) throw err;
+      const message = String(err);
+      // NEXT_REDIRECT means signIn succeeded and is redirecting us
+      if (message.includes("NEXT_REDIRECT") || message.includes("redirect")) {
+        window.location.href = "/dashboard";
+        return;
+      }
       setError("Something went wrong. Please try again.");
       setLoading(false);
     }
