@@ -1,8 +1,13 @@
 import { PrismaClient } from "@prisma/client";
+import { PrismaNeon } from "@prisma/adapter-neon";
 import bcrypt from "bcryptjs";
-import "dotenv/config";
+import { config } from "dotenv";
+config({ path: ".env.local" });
 
-const prisma = new PrismaClient();
+if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL not found in .env.local");
+
+const adapter = new PrismaNeon({ connectionString: process.env.DATABASE_URL });
+const prisma = new PrismaClient({ adapter });
 
 const REGISTRY = [
   { id: "4215243400100", name: "AMALGAMATOR", cat: "DENTAL", subcat: "DENTAL CLINIC" },

@@ -58,7 +58,7 @@ export function UsersClient({ initialUsers, currentUserId }: { initialUsers: Use
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
           className="bg-slate-900 border border-slate-700 rounded-xl p-5 mb-5">
           <h3 className="text-white font-semibold mb-4">Create New User</h3>
-          <form onSubmit={createUser} className="grid grid-cols-2 gap-3">
+          <form onSubmit={createUser} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="text-slate-400 text-xs mb-1 block">Full Name</label>
               <input required value={newForm.name} onChange={e => setNewForm({ ...newForm, name: e.target.value })}
@@ -99,7 +99,8 @@ export function UsersClient({ initialUsers, currentUserId }: { initialUsers: Use
       )}
 
       <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full text-sm min-w-[600px]">
           <thead>
             <tr className="border-b border-slate-800">
               <th className="px-4 py-3 text-left text-slate-500 text-xs font-semibold uppercase">User</th>
@@ -156,6 +157,7 @@ export function UsersClient({ initialUsers, currentUserId }: { initialUsers: Use
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

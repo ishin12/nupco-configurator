@@ -141,6 +141,27 @@ export function RoomConfigurator({ project, sessionRole }: { project: Project; s
 
   function onMU() { setDragging(null); }
 
+  // Touch equivalents for mobile drag-drop
+  function onTD(item: LayoutItem, e: React.TouchEvent) {
+    if (!svgRef.current) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    const r = svgRef.current.getBoundingClientRect();
+    setDragging(item);
+    setDragOff({ x: touch.clientX - r.left - item.x, y: touch.clientY - r.top - item.y });
+    setSelected(item);
+  }
+
+  function onTM(e: React.TouchEvent) {
+    if (!dragging || !svgRef.current || !layout) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    const r = svgRef.current.getBoundingClientRect();
+    const x = Math.max(20, Math.min(touch.clientX - r.left - dragOff.x, 560 - dragging.w));
+    const y = Math.max(20, Math.min(touch.clientY - r.top - dragOff.y, 385 - dragging.h));
+    setLayout((prev) => prev ? { ...prev, items: prev.items.map((i) => i.id === dragging.id ? { ...i, x, y } : i) } : prev);
+  }
+
   function rotateItem(id: string) {
     setLayout((prev) => prev ? { ...prev, items: prev.items.map((i) => i.id === id ? { ...i, rot: (i.rot + 90) % 360 } : i) } : prev);
   }
@@ -304,7 +325,7 @@ export function RoomConfigurator({ project, sessionRole }: { project: Project; s
 
           {/* Budget bar */}
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
-            <div className="flex justify-between text-xs text-slate-400 mb-2">
+            <div className="flex flex-col sm:flex-row sm:justify-between text-xs text-slate-400 mb-2 gap-0.5">
               <span>Budget: {layout.budget.allocated.toLocaleString()} SAR</span>
               <span>Used: {layout.budget.used.toLocaleString()} SAR · Remaining: {(layout.budget.allocated - layout.budget.used).toLocaleString()} SAR</span>
             </div>
@@ -332,7 +353,7 @@ export function RoomConfigurator({ project, sessionRole }: { project: Project; s
           )}
 
           {/* Floor plan + chat */}
-          <div className="grid lg:grid-cols-3 gap-4">
+          <div className="grid lg:grid-cols-3 gap-4 items-start">
             <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-xl p-4">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-white font-semibold text-sm">Floor Plan</h3>
@@ -359,10 +380,12 @@ export function RoomConfigurator({ project, sessionRole }: { project: Project; s
                 ref={svgRef}
                 viewBox="0 0 600 410"
                 className="w-full rounded-lg border border-slate-700 bg-slate-950 select-none"
-                style={{ cursor: dragging ? "grabbing" : "default" }}
+                style={{ cursor: dragging ? "grabbing" : "default", touchAction: "none" }}
                 onMouseMove={onMM}
                 onMouseUp={onMU}
                 onMouseLeave={onMU}
+                onTouchMove={onTM}
+                onTouchEnd={onMU}
               >
                 <rect x="18" y="18" width="564" height="374" fill="none" stroke="#334155" strokeWidth="4" rx="3" />
                 {[100, 200, 300, 400, 500].map((x) => <line key={"gx" + x} x1={x} y1="18" x2={x} y2="392" stroke="#1e293b" strokeWidth="1" />)}
@@ -380,6 +403,7 @@ export function RoomConfigurator({ project, sessionRole }: { project: Project; s
                     <g key={item.id}
                       transform={`rotate(${item.rot}, ${item.x + item.w / 2}, ${item.y + item.h / 2})`}
                       onMouseDown={(e) => { e.preventDefault(); onMD(item, e); }}
+                      onTouchStart={(e) => onTD(item, e)}
                       style={{ cursor: "grab" }}
                     >
                       <rect x={item.x} y={item.y} width={item.w} height={item.h} rx="4" fill={fill} stroke={isSelected ? "#f59e0b" : stroke} strokeWidth={isSelected ? 2.5 : 1.5} />
@@ -404,7 +428,7 @@ export function RoomConfigurator({ project, sessionRole }: { project: Project; s
             </div>
 
             {/* Equipment list / Chat panel */}
-            <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col">
+            <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col" style={{ maxHeight: "clamp(320px, 60vh, 560px)" }}>
               <div className="flex border-b border-slate-800">
                 <button onClick={() => setShowChat(false)} className={`flex-1 text-xs font-medium py-2.5 transition-colors ${!showChat ? "text-white bg-slate-800" : "text-slate-400 hover:text-white"}`}>
                   Equipment ({layout.items.length})
@@ -539,8 +563,8 @@ export function RoomConfigurator({ project, sessionRole }: { project: Project; s
                   className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
-              <div className="flex-1 overflow-y-auto">
-                <table className="w-full text-sm">
+              <div className="flex-1 overflow-y-auto overflow-x-auto">
+                <table className="w-full text-sm min-w-[560px]">
                   <thead className="sticky top-0 bg-slate-950">
                     <tr>
                       {["NUPCO Code", "Name", "Category", "Subcategory"].map((h) => (
