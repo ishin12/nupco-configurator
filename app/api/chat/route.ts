@@ -7,18 +7,14 @@ export async function POST(req: NextRequest) {
 
   const { messages, context } = await req.json();
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey || apiKey === "sk-ant-placeholder") {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
     return NextResponse.json({
-      reply: "AI assistant not configured. Please add your ANTHROPIC_API_KEY to .env.local to enable real AI responses.",
+      reply: "AI assistant not configured. Please add your GEMINI_API_KEY to environment variables.",
     });
   }
 
-  try {
-    const Anthropic = (await import("@anthropic-ai/sdk")).default;
-    const client = new Anthropic({ apiKey });
-
-    const system = `You are an expert medical equipment planner for NUPCO (National Unified Procurement Company of Saudi Arabia).
+  const system = `You are an expert medical equipment planner for NUPCO (National Unified Procurement Company of Saudi Arabia).
 You help hospital planners configure rooms according to iHFG (Australasian Health Facility Guidelines) standards.
 
 Current room context:
@@ -33,20 +29,31 @@ You can help with:
 
 Keep replies concise and actionable. Use SAR for currency.`;
 
-    const response = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 500,
-      system,
-      messages: messages.map((m: { role: string; content: string }) => ({
-        role: m.role as "user" | "assistant",
-        content: m.content,
-      })),
-    });
+  try {
+    // Build Gemini message history
+    const geminiMessages = messages.map((m: { role: string; content: string }) => ({
+      role: m.role === "assistant" ? "model" : "user",
+      parts: [{ text: m.content }],
+    }));
 
-    const reply = response.content[0].type === "text" ? response.content[0].text : "Sorry, I could not process that.";
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: system }] },
+          contents: geminiMessages,
+          generationConfig: { maxOutputTokens: 500, temperature: 0.7 },
+        }),
+      }
+    );
+
+    const data = await res.json();
+    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "Sorry, I could not process that.";
     return NextResponse.json({ reply });
   } catch (err) {
-    console.error("Claude API error:", err);
+    console.error("Gemini API error:", err);
     return NextResponse.json({ reply: "AI temporarily unavailable. Please try again." });
   }
 }
