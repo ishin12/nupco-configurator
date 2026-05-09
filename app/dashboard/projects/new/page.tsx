@@ -128,7 +128,7 @@ export default function NewProjectPage() {
               value={form.budget}
               onChange={(e) => setForm({ ...form, budget: e.target.value })}
               min="1000"
-              step="10000"
+              step="1"
               className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
             />
             <div className="flex gap-2 mt-2 flex-wrap">
