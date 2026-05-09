@@ -50,6 +50,7 @@ Keep replies concise and actionable. Use SAR for currency.`;
     );
 
     const data = await res.json();
+    console.log("GEMINI RESPONSE:", JSON.stringify(data, null, 2)); // 👈 added
     const reply = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "Sorry, I could not process that.";
     return NextResponse.json({ reply });
   } catch (err) {
