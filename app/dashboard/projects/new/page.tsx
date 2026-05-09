@@ -36,16 +36,18 @@ export default function NewProjectPage() {
     const res = await fetch("/api/projects", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, budget: parseInt(form.budget) }),
+      body: JSON.stringify({ ...form, budget: Number.parseInt(form.budget, 10) }),
     });
 
     if (res.ok) {
       const project = await res.json();
       router.push(`/dashboard/projects/${project.id}`);
-    } else {
-      setLoading(false);
-      alert("Failed to create project. Please try again.");
+      return;
     }
+
+    const err = await res.json().catch(() => ({}));
+    setLoading(false);
+    alert(err?.error || "Failed to create project. Please try again.");
   }
 
   return (
@@ -128,7 +130,7 @@ export default function NewProjectPage() {
               value={form.budget}
               onChange={(e) => setForm({ ...form, budget: e.target.value })}
               min="1000"
-              step="10000"
+              step="1000"
               className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
             />
             <div className="flex gap-2 mt-2 flex-wrap">
